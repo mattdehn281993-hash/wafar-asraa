@@ -1,0 +1,79 @@
+{
+  "$comment": "Shared test cases for turning Claude's shopping-list reading into basket lines (backend/src/rules/shoppingList.ts). Quantities become whole units from 1 to 99 (the demo cart's limit per product). Lines for the same product are combined. Ids not in the catalogue are treated as unmatched.",
+  "catalogue_ids": ["milk", "rice", "eggs", "bread"],
+  "cases": [
+    {
+      "name": "matched lines become basket lines in written order",
+      "items": [
+        { "raw_text": "لبن ٢", "name_en": "milk", "quantity": 2, "unit": null, "product_id": "milk" },
+        { "raw_text": "رز", "name_en": "rice", "quantity": 1, "unit": null, "product_id": "rice" }
+      ],
+      "expected": {
+        "lines": [
+          { "product_id": "milk", "quantity": 2 },
+          { "product_id": "rice", "quantity": 1 }
+        ],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "unmatched lines are listed by what was written",
+      "items": [
+        { "raw_text": "طماطم", "name_en": "tomatoes", "quantity": 1, "unit": "كيلو", "product_id": null },
+        { "raw_text": "eggs", "name_en": "eggs", "quantity": 1, "unit": null, "product_id": "eggs" }
+      ],
+      "expected": {
+        "lines": [{ "product_id": "eggs", "quantity": 1 }],
+        "unmatched": ["طماطم"]
+      }
+    },
+    {
+      "name": "an id outside the catalogue counts as unmatched",
+      "items": [
+        { "raw_text": "زيت", "name_en": "oil", "quantity": 1, "unit": null, "product_id": "oil" }
+      ],
+      "expected": { "lines": [], "unmatched": ["زيت"] }
+    },
+    {
+      "name": "the same product on two lines is combined",
+      "items": [
+        { "raw_text": "عيش", "name_en": "bread", "quantity": 2, "unit": null, "product_id": "bread" },
+        { "raw_text": "عيش بلدي", "name_en": "baladi bread", "quantity": 3, "unit": null, "product_id": "bread" }
+      ],
+      "expected": { "lines": [{ "product_id": "bread", "quantity": 5 }], "unmatched": [] }
+    },
+    {
+      "name": "quantities are rounded up to whole units and kept between 1 and 99",
+      "items": [
+        { "raw_text": "رز ٠٫٥ كيلو", "name_en": "rice", "quantity": 0.5, "unit": "كيلو", "product_id": "rice" },
+        { "raw_text": "milk 1.5", "name_en": "milk", "quantity": 1.5, "unit": null, "product_id": "milk" },
+        { "raw_text": "eggs 500", "name_en": "eggs", "quantity": 500, "unit": null, "product_id": "eggs" },
+        { "raw_text": "bread 0", "name_en": "bread", "quantity": 0, "unit": null, "product_id": "bread" }
+      ],
+      "expected": {
+        "lines": [
+          { "product_id": "rice", "quantity": 1 },
+          { "product_id": "milk", "quantity": 2 },
+          { "product_id": "eggs", "quantity": 99 },
+          { "product_id": "bread", "quantity": 1 }
+        ],
+        "unmatched": []
+      }
+    },
+    {
+      "name": "combined lines also stop at 99",
+      "items": [
+        { "raw_text": "milk 60", "name_en": "milk", "quantity": 60, "unit": null, "product_id": "milk" },
+        { "raw_text": "milk 60", "name_en": "milk", "quantity": 60, "unit": null, "product_id": "milk" }
+      ],
+      "expected": { "lines": [{ "product_id": "milk", "quantity": 99 }], "unmatched": [] }
+    },
+    {
+      "name": "blank written lines are dropped",
+      "items": [
+        { "raw_text": "  ", "name_en": "", "quantity": 1, "unit": null, "product_id": null }
+      ],
+      "expected": { "lines": [], "unmatched": [] }
+    }
+  ]
+}

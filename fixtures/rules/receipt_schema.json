@@ -1,0 +1,56 @@
+{
+  "$comment": "Shared test cases for parsing Claude's receipt JSON against schemas/receipt_extraction.schema.json. Each invalid case is base_receipt with `receipt` merged over its top-level keys, then the keys in `remove` deleted. Every invalid case must be rejected.",
+  "base_receipt": {
+    "is_receipt": true,
+    "language": "ar",
+    "store": { "name_raw": "هايبر وان", "name_en": "Hyper One", "branch_raw": null, "address_raw": null },
+    "purchase_date": "2026-11-05",
+    "purchase_time": "18:42",
+    "currency": "EGP",
+    "items": [
+      { "raw_name": "لبن جهينة 1ل", "name_en": "Milk", "brand": "Juhayna", "size_text": "1ل", "barcode": null, "quantity": 1, "unit_price": 45.5, "line_total": 45.5, "discount": 0, "category": "dairy_eggs" }
+    ],
+    "subtotal": 45.5,
+    "discount_total": 0,
+    "tax_total": null,
+    "total": 45.5,
+    "payment_method": "cash",
+    "confidence": 0.92,
+    "issues": []
+  },
+  "invalid": [
+    { "name": "extra top-level field", "receipt": { "notes": "hello" } },
+    { "name": "missing total", "remove": ["total"] },
+    { "name": "missing issues", "remove": ["issues"] },
+    { "name": "total as a string", "receipt": { "total": "45.50" } },
+    { "name": "date not YYYY-MM-DD", "receipt": { "purchase_date": "05/11/2026" } },
+    { "name": "unknown currency value", "receipt": { "currency": "USD" } },
+    { "name": "unknown issue value", "receipt": { "issues": ["dark"] } },
+    { "name": "unknown payment method", "receipt": { "payment_method": "cheque" } },
+    { "name": "store missing branch_raw", "receipt": { "store": { "name_raw": "x", "name_en": null, "address_raw": null } } },
+    {
+      "name": "item with unknown category",
+      "receipt": {
+        "items": [
+          { "raw_name": "x", "name_en": null, "brand": null, "size_text": null, "barcode": null, "quantity": 1, "unit_price": null, "line_total": 10, "discount": 0, "category": "toys" }
+        ]
+      }
+    },
+    {
+      "name": "item with extra field",
+      "receipt": {
+        "items": [
+          { "raw_name": "x", "name_en": null, "brand": null, "size_text": null, "barcode": null, "quantity": 1, "unit_price": null, "line_total": 10, "discount": 0, "category": "other", "vat": 1 }
+        ]
+      }
+    },
+    {
+      "name": "item line_total null",
+      "receipt": {
+        "items": [
+          { "raw_name": "x", "name_en": null, "brand": null, "size_text": null, "barcode": null, "quantity": 1, "unit_price": null, "line_total": null, "discount": 0, "category": "other" }
+        ]
+      }
+    }
+  ]
+}
