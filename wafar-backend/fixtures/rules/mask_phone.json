@@ -1,0 +1,12 @@
+{
+  "$comment": "Shared test cases for phone masking in logs (backend/src/lib/phone.ts). Numbers are fake.",
+  "cases": [
+    { "input": "+201001234567", "expected": "+2010****4567" },
+    { "input": "201001234567", "expected": "2010****4567" },
+    { "input": "201001234567@s.whatsapp.net", "expected": "2010****4567" },
+    { "input": "+20 100 123 4567", "expected": "+2010****4567" },
+    { "input": "+4915112345678", "expected": "+4915****5678" },
+    { "input": "12345", "expected": "****" },
+    { "input": "", "expected": "****" }
+  ]
+}

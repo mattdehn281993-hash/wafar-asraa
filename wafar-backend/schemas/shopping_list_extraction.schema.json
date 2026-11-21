@@ -1,0 +1,55 @@
+{
+  "$comment": "JSON shape Claude must return when reading a photo of a shopping list (demo endpoint POST /demo/shopping-list). Source of truth: backend/src/ai/shoppingList.ts mirrors it and a test checks they match. Sent to the API without this $comment key.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "language", "items", "issues"],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": ["shopping_list", "receipt", "other"],
+      "description": "What the photo shows. A receipt is a printed bill from a shop; a shopping list is things someone plans to buy."
+    },
+    "language": {
+      "type": "string",
+      "enum": ["ar", "en", "mixed"]
+    },
+    "items": {
+      "type": "array",
+      "description": "One entry per line of the list, in written order. Empty unless kind is shopping_list.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["raw_text", "name_en", "quantity", "unit", "product_id"],
+        "properties": {
+          "raw_text": {
+            "type": "string",
+            "description": "The line exactly as written, in its original script."
+          },
+          "name_en": {
+            "type": "string",
+            "description": "Short English name of the item, e.g. \"milk\"."
+          },
+          "quantity": {
+            "type": "number",
+            "description": "How many packs or units to buy. 1 if no amount is written."
+          },
+          "unit": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "description": "The unit as written (kg, bottle, كيلو, علبة…), or null."
+          },
+          "product_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "description": "The id of the matching catalogue product, or null if none matches."
+          }
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["blurry", "cut_off", "partly_unreadable"]
+      }
+    }
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "$comment": "Wafar Asraa receipt extraction v1. Sent to the Claude Messages API as output_config.format = {type: 'json_schema', schema: <this file without $comment>}. Every object has additionalProperties:false and every field is required; unknown values are null, never guessed. Money is a JSON number in the receipt currency (EGP) with up to 2 decimals. Numbers always use Western digits (0-9) even when the receipt prints Arabic-Indic digits.",
+  "type": "object",
+  "properties": {
+    "is_receipt": {
+      "type": "boolean",
+      "description": "true if the input is a shopping receipt or a clear description of a purchase. false for anything else (selfie, menu, screenshot of a chat, blank photo)."
+    },
+    "language": {
+      "type": "string",
+      "enum": ["ar", "en", "mixed"],
+      "description": "Main language printed on the receipt or spoken in the note."
+    },
+    "store": {
+      "type": "object",
+      "properties": {
+        "name_raw": {
+          "type": "string",
+          "description": "Store name exactly as printed or said, in its original script. Empty string if not shown."
+        },
+        "name_en": {
+          "type": ["string", "null"],
+          "description": "Store name in English or Latin letters if known, else null."
+        },
+        "branch_raw": {
+          "type": ["string", "null"],
+          "description": "Branch name as printed, e.g. 'فرع التجمع'. null if not shown."
+        },
+        "address_raw": {
+          "type": ["string", "null"],
+          "description": "Address as printed. null if not shown."
+        }
+      },
+      "required": ["name_raw", "name_en", "branch_raw", "address_raw"],
+      "additionalProperties": false
+    },
+    "purchase_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Date on the receipt as YYYY-MM-DD. Egyptian receipts usually print DD/MM/YYYY. null if not printed or not readable."
+    },
+    "purchase_time": {
+      "type": ["string", "null"],
+      "description": "Time on the receipt as 24h HH:MM. null if not printed."
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["EGP", "other"],
+      "description": "EGP unless the receipt clearly shows another currency."
+    },
+    "items": {
+      "type": "array",
+      "description": "One entry per printed line item, in printed order. Do not merge or split lines. Empty array if no items are readable.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "raw_name": {
+            "type": "string",
+            "description": "Item name exactly as printed, including abbreviations, in its original script."
+          },
+          "name_en": {
+            "type": ["string", "null"],
+            "description": "Short plain English name, e.g. 'Sunflower oil'. null if the item cannot be identified."
+          },
+          "brand": {
+            "type": ["string", "null"],
+            "description": "Brand if identifiable from the line, e.g. 'Crystal'. null otherwise."
+          },
+          "size_text": {
+            "type": ["string", "null"],
+            "description": "Size or weight as printed, e.g. '1ل', '500g', '2.5 kg'. null if not shown."
+          },
+          "barcode": {
+            "type": ["string", "null"],
+            "description": "Barcode digits if printed on the line. null otherwise."
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Units or weight bought. 1 if not shown. Weighed items use the printed weight in kg."
+          },
+          "unit_price": {
+            "type": ["number", "null"],
+            "description": "Price per unit or per kg if printed. null if only the line total is printed."
+          },
+          "line_total": {
+            "type": "number",
+            "description": "Amount charged for this line before any separate discount line."
+          },
+          "discount": {
+            "type": "number",
+            "description": "Discount applied to this specific line, as a positive number. 0 if none."
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "vegetables_fruit",
+              "meat_poultry_fish",
+              "dairy_eggs",
+              "bakery",
+              "rice_pasta_grains",
+              "oil_ghee",
+              "sugar_tea_coffee",
+              "snacks_drinks",
+              "cleaning",
+              "personal_care",
+              "baby",
+              "pharmacy",
+              "eating_out",
+              "other"
+            ],
+            "description": "Best-fit category. Matches categories.slug in the database."
+          }
+        },
+        "required": [
+          "raw_name",
+          "name_en",
+          "brand",
+          "size_text",
+          "barcode",
+          "quantity",
+          "unit_price",
+          "line_total",
+          "discount",
+          "category"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "subtotal": {
+      "type": ["number", "null"],
+      "description": "Subtotal as printed. null if not printed."
+    },
+    "discount_total": {
+      "type": "number",
+      "description": "Total discount on the whole receipt as a positive number. 0 if none."
+    },
+    "tax_total": {
+      "type": ["number", "null"],
+      "description": "VAT or service charge as printed. null if not printed."
+    },
+    "total": {
+      "type": ["number", "null"],
+      "description": "Final amount paid as printed. null only if it truly cannot be read."
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": ["cash", "card", "mobile_wallet", "unknown"],
+      "description": "How the customer paid, if printed."
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Your overall confidence from 0 to 1 that store, date, items and total are all read correctly."
+    },
+    "issues": {
+      "type": "array",
+      "description": "Problems that should make the bot ask the user for a clearer photo or a correction. Empty array if none.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "blurry",
+          "cut_off",
+          "faded",
+          "handwritten",
+          "not_a_receipt",
+          "multiple_receipts",
+          "total_not_readable",
+          "items_not_readable",
+          "total_mismatch"
+        ]
+      }
+    }
+  },
+  "required": [
+    "is_receipt",
+    "language",
+    "store",
+    "purchase_date",
+    "purchase_time",
+    "currency",
+    "items",
+    "subtotal",
+    "discount_total",
+    "tax_total",
+    "total",
+    "payment_method",
+    "confidence",
+    "issues"
+  ],
+  "additionalProperties": false
+}

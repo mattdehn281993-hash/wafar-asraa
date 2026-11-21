@@ -1,0 +1,220 @@
+{
+  "$comment": "Shared test cases for receipt validation (backend/src/rules/receiptValidation.ts, rules in AGENTS.md §7). Each case's receipt is base_receipt with `receipt` merged over its top-level keys. Money in receipts is EGP as Claude returns it; expected totals are integer piastres. Every merged receipt must also pass the receipt schema.",
+  "base_receipt": {
+    "is_receipt": true,
+    "language": "ar",
+    "store": { "name_raw": "هايبر وان", "name_en": "Hyper One", "branch_raw": "فرع زايد", "address_raw": null },
+    "purchase_date": "2026-11-05",
+    "purchase_time": "18:42",
+    "currency": "EGP",
+    "items": [
+      { "raw_name": "لبن جهينة 1ل", "name_en": "Milk", "brand": "Juhayna", "size_text": "1ل", "barcode": null, "quantity": 1, "unit_price": 45.5, "line_total": 45.5, "discount": 0, "category": "dairy_eggs" },
+      { "raw_name": "عيش فينو", "name_en": "Fino bread", "brand": null, "size_text": null, "barcode": null, "quantity": 2, "unit_price": 15, "line_total": 30, "discount": 0, "category": "bakery" }
+    ],
+    "subtotal": 75.5,
+    "discount_total": 0,
+    "tax_total": null,
+    "total": 75.5,
+    "payment_method": "cash",
+    "confidence": 0.92,
+    "issues": []
+  },
+  "cases": [
+    {
+      "name": "good photo receipt",
+      "source": "photo",
+      "receipt": {},
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 7550, "issues": [] }
+    },
+    {
+      "name": "total within 1 EGP of the items",
+      "source": "photo",
+      "receipt": { "total": 76.4 },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 7640, "issues": [] }
+    },
+    {
+      "name": "total exactly 1 EGP off still passes",
+      "source": "photo",
+      "receipt": { "total": 76.5 },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 7650, "issues": [] }
+    },
+    {
+      "name": "total off by more than 1 EGP",
+      "source": "photo",
+      "receipt": { "total": 80 },
+      "expected": { "kind": "save", "status": "needs_review", "total_piastres": 8000, "issues": ["total_mismatch"] }
+    },
+    {
+      "name": "total null on a photo",
+      "source": "photo",
+      "receipt": { "total": null },
+      "expected": { "kind": "unclear", "reasons": ["total_not_readable"] }
+    },
+    {
+      "name": "total null and model also flagged it",
+      "source": "photo",
+      "receipt": { "total": null, "issues": ["total_not_readable"] },
+      "expected": { "kind": "unclear", "reasons": ["total_not_readable"] }
+    },
+    {
+      "name": "confidence below 0.6",
+      "source": "photo",
+      "receipt": { "confidence": 0.55 },
+      "expected": { "kind": "unclear", "reasons": ["low_confidence"] }
+    },
+    {
+      "name": "confidence exactly 0.6 is enough",
+      "source": "photo",
+      "receipt": { "confidence": 0.6 },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 7550, "issues": [] }
+    },
+    {
+      "name": "blurry photo",
+      "source": "photo",
+      "receipt": { "issues": ["blurry"] },
+      "expected": { "kind": "unclear", "reasons": ["blurry"] }
+    },
+    {
+      "name": "cut off, faded and low confidence",
+      "source": "photo",
+      "receipt": { "confidence": 0.4, "issues": ["cut_off", "faded"] },
+      "expected": { "kind": "unclear", "reasons": ["low_confidence", "cut_off"] }
+    },
+    {
+      "name": "not a receipt",
+      "source": "photo",
+      "receipt": { "is_receipt": false, "items": [], "subtotal": null, "total": null, "confidence": 0.95, "issues": ["not_a_receipt"] },
+      "expected": { "kind": "not_a_receipt" }
+    },
+    {
+      "name": "VAT already included in item prices (printed as an information line)",
+      "source": "photo",
+      "receipt": {
+        "items": [
+          { "raw_name": "زيت كريستال 1ل", "name_en": "Sunflower oil", "brand": "Crystal", "size_text": "1ل", "barcode": null, "quantity": 1, "unit_price": 114, "line_total": 114, "discount": 0, "category": "oil_ghee" },
+          { "raw_name": "مسحوق برسيل 2ك", "name_en": "Laundry powder", "brand": "Persil", "size_text": "2ك", "barcode": null, "quantity": 1, "unit_price": 228, "line_total": 228, "discount": 0, "category": "cleaning" }
+        ],
+        "subtotal": 342,
+        "tax_total": 42,
+        "total": 342
+      },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 34200, "issues": [] }
+    },
+    {
+      "name": "VAT added on top of item prices",
+      "source": "photo",
+      "receipt": {
+        "items": [
+          { "raw_name": "Sunflower oil 1L", "name_en": "Sunflower oil", "brand": null, "size_text": "1L", "barcode": null, "quantity": 1, "unit_price": 100, "line_total": 100, "discount": 0, "category": "oil_ghee" },
+          { "raw_name": "Laundry powder 2kg", "name_en": "Laundry powder", "brand": null, "size_text": "2kg", "barcode": null, "quantity": 1, "unit_price": 200, "line_total": 200, "discount": 0, "category": "cleaning" }
+        ],
+        "subtotal": 300,
+        "tax_total": 42,
+        "total": 342
+      },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 34200, "issues": [] }
+    },
+    {
+      "name": "line discount and whole-bill discount",
+      "source": "photo",
+      "receipt": {
+        "items": [
+          { "raw_name": "جبنة دومتي", "name_en": "White cheese", "brand": "Domty", "size_text": null, "barcode": null, "quantity": 1, "unit_price": 100, "line_total": 100, "discount": 10, "category": "dairy_eggs" },
+          { "raw_name": "شاي العروسة", "name_en": "Tea", "brand": "El Arosa", "size_text": null, "barcode": null, "quantity": 1, "unit_price": 50, "line_total": 50, "discount": 0, "category": "sugar_tea_coffee" }
+        ],
+        "subtotal": 140,
+        "discount_total": 5,
+        "total": 135
+      },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 13500, "issues": [] }
+    },
+    {
+      "name": "model flagged total_mismatch but the numbers add up",
+      "source": "photo",
+      "receipt": { "issues": ["total_mismatch", "faded"] },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 7550, "issues": ["faded"] }
+    },
+    {
+      "name": "floating point noise in amounts",
+      "source": "photo",
+      "receipt": {
+        "items": [
+          { "raw_name": "a", "name_en": null, "brand": null, "size_text": null, "barcode": null, "quantity": 1, "unit_price": null, "line_total": 0.1, "discount": 0, "category": "other" },
+          { "raw_name": "b", "name_en": null, "brand": null, "size_text": null, "barcode": null, "quantity": 1, "unit_price": null, "line_total": 0.2, "discount": 0, "category": "other" }
+        ],
+        "subtotal": null,
+        "total": 0.3
+      },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 30, "issues": [] }
+    },
+    {
+      "name": "typed purchase: one amount for several things",
+      "source": "text",
+      "receipt": {
+        "language": "en",
+        "store": { "name_raw": "", "name_en": null, "branch_raw": null, "address_raw": null },
+        "purchase_date": null,
+        "purchase_time": null,
+        "items": [
+          { "raw_name": "milk and bread", "name_en": "Milk and bread", "brand": null, "size_text": null, "barcode": null, "quantity": 1, "unit_price": null, "line_total": 85, "discount": 0, "category": "dairy_eggs" }
+        ],
+        "subtotal": null,
+        "total": 85,
+        "payment_method": "unknown",
+        "confidence": 0.85
+      },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 8500, "issues": [] }
+    },
+    {
+      "name": "typed purchase split without prices: the user's amount wins",
+      "source": "text",
+      "receipt": {
+        "language": "en",
+        "store": { "name_raw": "", "name_en": null, "branch_raw": null, "address_raw": null },
+        "purchase_date": null,
+        "purchase_time": null,
+        "items": [
+          { "raw_name": "milk", "name_en": "Milk", "brand": null, "size_text": null, "barcode": null, "quantity": 1, "unit_price": null, "line_total": 0, "discount": 0, "category": "dairy_eggs" },
+          { "raw_name": "bread", "name_en": "Bread", "brand": null, "size_text": null, "barcode": null, "quantity": 1, "unit_price": null, "line_total": 0, "discount": 0, "category": "bakery" }
+        ],
+        "subtotal": null,
+        "total": 85,
+        "payment_method": "unknown",
+        "confidence": 0.8
+      },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 8500, "issues": [] }
+    },
+    {
+      "name": "voice note with no total: use the items",
+      "source": "voice",
+      "receipt": {
+        "store": { "name_raw": "الجزار", "name_en": null, "branch_raw": null, "address_raw": null },
+        "purchase_date": null,
+        "purchase_time": null,
+        "items": [
+          { "raw_name": "لحمة", "name_en": "Beef", "brand": null, "size_text": null, "barcode": null, "quantity": 1, "unit_price": null, "line_total": 400, "discount": 0, "category": "meat_poultry_fish" }
+        ],
+        "subtotal": null,
+        "total": null,
+        "payment_method": "unknown",
+        "confidence": 0.9
+      },
+      "expected": { "kind": "save", "status": "parsed", "total_piastres": 40000, "issues": [] }
+    },
+    {
+      "name": "typed message with nothing to save",
+      "source": "text",
+      "receipt": {
+        "store": { "name_raw": "", "name_en": null, "branch_raw": null, "address_raw": null },
+        "purchase_date": null,
+        "purchase_time": null,
+        "items": [],
+        "subtotal": null,
+        "total": null,
+        "payment_method": "unknown",
+        "confidence": 0.7
+      },
+      "expected": { "kind": "unclear", "reasons": ["nothing_to_save"] }
+    }
+  ]
+}
