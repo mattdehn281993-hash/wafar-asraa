@@ -36,4 +36,7 @@ export const router = createBrowserRouter([
       { path: "*", Component: NotFoundScreen },
     ],
   },
-]);
+], {
+  // "/" locally; "/Wafar-Asraa" on GitHub Pages (set by BASE_PATH at build time, see vite.config.ts).
+  basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/",
+});

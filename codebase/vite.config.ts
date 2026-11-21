@@ -4,6 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
+  // GitHub Pages serves the app from /Wafar-Asraa/; the deploy workflow sets BASE_PATH.
+  base: process.env.BASE_PATH ?? "/",
   plugins: [react(), tailwindcss()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   // In development, /api/* goes to the Wafar backend (wafar-backend/backend, `npm run dev`, port 8080).

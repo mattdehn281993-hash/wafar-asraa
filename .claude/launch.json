@@ -8,6 +8,13 @@
       "port": 5173
     },
     {
+      "name": "wafar-pages-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "codebase", "run", "preview", "--", "--port", "4173", "--strictPort"],
+      "env": { "BASE_PATH": "/Wafar-Asraa/" },
+      "port": 4173
+    },
+    {
       "name": "wafar-backend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "wafar-backend/backend", "run", "dev"],
