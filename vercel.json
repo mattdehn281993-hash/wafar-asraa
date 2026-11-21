@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm ci --prefix codebase",
-  "buildCommand": "npm run build --prefix codebase",
+  "installCommand": "cd codebase && npm ci",
+  "buildCommand": "cd codebase && npm run build",
   "outputDirectory": "codebase/dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
