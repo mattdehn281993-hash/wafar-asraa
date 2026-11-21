@@ -20,3 +20,7 @@ artifacts/
 # beside it.
 /.plugins/
 /.opencode-skills/
+
+# Old tsc output next to vite.config.ts (now written to node_modules/.tmp)
+/vite.config.js
+/vite.config.d.ts

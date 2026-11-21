@@ -106,3 +106,23 @@ export function money(piastres: number, language: Language) {
 }
 export function number(value: number, language: Language) { return new Intl.NumberFormat(language === "ar" ? "ar-EG" : "en-EG").format(value); }
 export function dateLabel(date: string, language: Language, monthOnly = false) { return new Intl.DateTimeFormat(language === "ar" ? "ar-EG" : "en-EG", { timeZone: "Africa/Cairo", ...(monthOnly ? { month: "long", year: "numeric" } : { day: "numeric", month: "short", year: "numeric" }) }).format(new Date(`${date}${date.length === 7 ? "-01" : ""}T12:00:00Z`)); }
+export type ProposedLine = { id: string; quantity: number };
+/** Shopping-list lines → products sold in this area (bought at their cheapest sample store) and products not sold here. */
+export function proposeFromList(lines: { product_id: string; quantity: number }[], products: PriceProduct[], areaId = 'new-cairo') {
+  const proposed: ProposedLine[] = []; const notInArea: string[] = [];
+  for (const line of lines) {
+    const product = products.find(p => p.id === line.product_id);
+    if (!product) continue;
+    if (lowestStore(product, areaId) < 0) notInArea.push(product.id);
+    else proposed.push({ id: product.id, quantity: Math.min(99, Math.max(1, Math.trunc(line.quantity))) });
+  }
+  return { proposed, notInArea };
+}
+/** Total of a proposal at each product's cheapest sample store in this area, in piastres. */
+export function proposalTotal(lines: ProposedLine[], products: PriceProduct[], areaId = 'new-cairo') {
+  return lines.reduce((sum, line) => {
+    const product = products.find(p => p.id === line.id); if (!product) return sum;
+    const store = lowestStore(product, areaId);
+    return store < 0 ? sum : sum + priceAt(product, store, areaId) * line.quantity;
+  }, 0);
+}

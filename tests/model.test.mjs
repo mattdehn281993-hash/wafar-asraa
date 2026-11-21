@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { priceAt, cartTotals, changeCart, parseMoney, summarize, budgetDecision, cairoDate, monthOptions, moveToCheapest, lowestStore, isAvailable, sampleAreas, budgetForMonth, campaignProducts } from '../src/domain/model.ts';
+import { priceAt, cartTotals, changeCart, parseMoney, summarize, budgetDecision, cairoDate, monthOptions, moveToCheapest, lowestStore, isAvailable, sampleAreas, budgetForMonth, campaignProducts, proposeFromList, proposalTotal } from '../src/domain/model.ts';
 
 const milk = { id: 'milk', price: 38, high: 47 };
 test('the selected store and quantity determine totals and savings', () => {
@@ -99,4 +99,15 @@ test('budget alerts respect boundaries, absent budgets and saved reasons', () =>
 test('month boundaries use Cairo and month options cross the year', () => {
   assert.equal(cairoDate(new Date('2026-11-30T23:30:00Z')), '2026-12-01');
   assert.deepEqual(monthOptions(new Date('2026-01-15T12:00:00Z')).slice(0, 2), ['2026-01', '2025-12']);
+});
+test('a read shopping list becomes a proposal for the selected area', () => {
+  const catalogue = [milk, { id: 'cheese', price: 72, high: 85 }];
+  const { proposed, notInArea } = proposeFromList([{ product_id: 'milk', quantity: 2 }, { product_id: 'cheese', quantity: 1 }, { product_id: 'unknown', quantity: 1 }], catalogue, 'haram');
+  assert.deepEqual(proposed, [{ id: 'milk', quantity: 2 }]);
+  assert.deepEqual(notInArea, ['cheese']);
+  assert.equal(proposalTotal(proposed, catalogue, 'haram'), priceAt(milk, lowestStore(milk, 'haram'), 'haram') * 2);
+});
+test('proposal quantities stay whole and within the 99 cart limit', () => {
+  const { proposed } = proposeFromList([{ product_id: 'milk', quantity: 250 }, { product_id: 'milk', quantity: 0 }], [milk]);
+  assert.deepEqual(proposed, [{ id: 'milk', quantity: 99 }, { id: 'milk', quantity: 1 }]);
 });
