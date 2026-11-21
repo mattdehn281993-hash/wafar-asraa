@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wafar-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "codebase", "run", "dev", "--", "--port", "5173", "--strictPort"],
+      "port": 5173
+    },
+    {
+      "name": "wafar-backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "wafar-backend/backend", "run", "dev"],
+      "port": 8080
+    }
+  ]
+}

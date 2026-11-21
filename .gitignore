@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+dist/
+target/
+.env
+.env.local
+*.pem
+*.log
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Backups of the two repos from before they were combined
+.git-premerge/
