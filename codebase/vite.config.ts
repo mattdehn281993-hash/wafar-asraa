@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
-  // GitHub Pages serves the app from /Wafar-Asraa/; the deploy workflow sets BASE_PATH.
+  // Set BASE_PATH (e.g. "/Wafar-Asraa/") only when hosting under a sub-folder; Vercel serves from "/".
   base: process.env.BASE_PATH ?? "/",
   plugins: [react(), tailwindcss()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
