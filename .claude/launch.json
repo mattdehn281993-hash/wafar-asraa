@@ -8,6 +8,12 @@
       "port": 5173
     },
     {
+      "name": "wafar-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "codebase", "run", "preview", "--", "--port", "4173", "--strictPort"],
+      "port": 4173
+    },
+    {
       "name": "wafar-backend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "wafar-backend/backend", "run", "dev"],

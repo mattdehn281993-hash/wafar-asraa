@@ -54,7 +54,9 @@
 
 * { box-sizing: border-box; }
 html, body, #root { min-height: 100%; margin: 0; }
-body { -webkit-font-smoothing: antialiased; }
+/* App feel on phones: no double-tap zoom, no font boosting, no grey tap flash, no rubber-band or pull-to-refresh. */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+body { -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 button, input { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { color: inherit; }
